@@ -47,9 +47,6 @@
        (partial f end)
        ()))))
 
-;; TODO: just going to assume for now that if you go diagonally you are substituting
-;; Might fix this in trace
-
 (defn string-trace
   [s t trace]
   (reductions
@@ -62,16 +59,23 @@
        (vec (butlast st))
 
        (not= i1 i2)
-       (vec (concat [(nth s i2)] st))
+       (vec (conj st (nth s i2)))
 
        :else
        st))
    (vec t)
    (partition 2 1 (reverse trace))))
 
+(defn remove-duplicates
+  [seq]
+  (map
+   first
+   (filter (partial apply not=) (partition 2 1 (concat seq [nil])))))
 
 (defn edit-trace
   [s t]
   (->> (naive s t)
        (trace s t)
-       (string-trace s t)))
+       (string-trace s t)
+       remove-duplicates
+       reverse))
