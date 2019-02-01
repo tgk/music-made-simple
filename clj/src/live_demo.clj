@@ -252,3 +252,44 @@
 
   (reset! melody nil)
   )
+
+;; Hooking up to DM1
+(def drum-notes
+  [36 37 38 39 42 43 46 49 56])
+
+(comment
+  (defn start-polyphonic-player
+    [a]
+    (future
+      (with-open [device (doto (get-midi-device "IAC Bus 2") .open)]
+        (let [receiver (.getReceiver device)]
+          (while @a
+            (play-polyphonic-notes receiver @a))))))
+  )
+
+(comment
+  (with-open [device (doto (get-midi-device "IAC Bus 2") .open)]
+    (play-notes (.getReceiver device) drum-notes))
+
+  (start-polyphonic-player melody)
+
+  (reset! melody
+          (map vector
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 8 (first drum-notes)) (shift 0))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 4 (second drum-notes)) (shift 2))))
+
+  (reset! melody
+          (map vector
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 8 (nth drum-notes 0)) (shift 0))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 4 (nth drum-notes 1)) (shift 2))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 9 (nth drum-notes 4)) (shift 3))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 3 (nth drum-notes 3)) (shift 0))))
+
+  (reset! melody nil)
+  )
