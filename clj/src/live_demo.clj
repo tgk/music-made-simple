@@ -2,8 +2,6 @@
   (:import [javax.sound.midi MidiSystem ShortMessage]))
 
 ;; List available devices
-(MidiSystem/getMidiDeviceInfo)
-
 (for [device-info (MidiSystem/getMidiDeviceInfo)]
   [(.getName device-info)
    (.getDescription device-info)])
@@ -23,7 +21,7 @@
              -1)
       (Thread/sleep 2000)
       (.send receiver (doto (ShortMessage.)
-                        (.setMessage ShortMessage/NOTE_ON 60 127))
+                        (.setMessage ShortMessage/NOTE_OFF 60 127))
              -1)))
   )
 
@@ -55,7 +53,7 @@
     (play-notes
      (.getReceiver device)
      (take
-      40
+      30
       (cycle
        (concat [60 64 67 nil 71]
                (reverse [60 64 nil 67 71])
@@ -105,8 +103,7 @@
   [tone-pattern offset]
   (->> tone-pattern
        (map {:semitone 1
-             :tone 2
-             :minor-third 3})
+             :tone 2})
        cycle
        (cons offset)
        (take 127)
@@ -170,30 +167,19 @@
         a (->> notes (random-sample 0.1) (take 4))
         d (->> notes (random-sample 0.1) (take 4))
         t (edit-distance/edit-trace a d)
-        b (rand-nth t)
-        c (rand-nth t)]
+        [i j] (sort [(rand-int (count t)) (rand-int (count t))])
+        b (nth t i)
+        c (nth t j)]
     (reset! melody (concat a b c d)))
 
   (reset! melody nil)
-  )
-
-;; Hooking up to hardware!
-(comment
-  (MidiSystem/getMidiDeviceInfo)
-
-  (defn start-player
-    [a]
-    (future
-      (with-open [device (doto (get-midi-device "Port 1") .open)]
-        (let [receiver (.getReceiver device)]
-          (while @a
-            (play-notes receiver @a))))))
   )
 
 ;; Euclidian rhythms
 (require 'euclidian-rhythms)
 
 (comment
+  (euclidian-rhythms/euclidian-pattern 16 4 :foo)
   (euclidian-rhythms/euclidian-pattern 16 4 60)
   (euclidian-rhythms/euclidian-pattern 16 3 63)
 
@@ -246,9 +232,9 @@
   (reset! melody
           (map vector
                (->> (euclidian-rhythms/euclidian-pattern 16 8 60) (shift 0))
-               (->> (euclidian-rhythms/euclidian-pattern 16 4 64) (shift 2))
+               (->> (euclidian-rhythms/euclidian-pattern 16 3 64) (shift 2))
                (->> (euclidian-rhythms/euclidian-pattern 16 2 67) (shift 3))
-               (->> (euclidian-rhythms/euclidian-pattern 16 3 71) (shift 0))))
+               (->> (euclidian-rhythms/euclidian-pattern 16 5 71) (shift 0))))
 
   (reset! melody nil)
   )
@@ -278,7 +264,28 @@
                (->> (euclidian-rhythms/euclidian-pattern
                      16 8 (first drum-notes)) (shift 0))
                (->> (euclidian-rhythms/euclidian-pattern
-                     16 4 (second drum-notes)) (shift 2))))
+                     16 4 (second drum-notes)) (shift 2))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 7 (nth drum-notes 2)) (shift 2))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 7 (nth drum-notes 2)) (shift 2))))
+
+  (reset! melody
+          (map vector
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 8 (first drum-notes)) (shift 0))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 4 (second drum-notes)) (shift 2))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 7 (nth drum-notes 2)) (shift 0))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 5 (nth drum-notes 3)) (shift 1))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 4 (nth drum-notes 5)) (shift 0))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 3 (nth drum-notes 6)) (shift 5))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 16 (nth drum-notes 7)) (shift 0))))
 
   (reset! melody
           (map vector
@@ -289,7 +296,14 @@
                (->> (euclidian-rhythms/euclidian-pattern
                      16 9 (nth drum-notes 4)) (shift 3))
                (->> (euclidian-rhythms/euclidian-pattern
-                     16 3 (nth drum-notes 3)) (shift 0))))
+                     16 5 (nth drum-notes 3)) (shift 1))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 6 (nth drum-notes 5)) (shift 0))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 7 (nth drum-notes 6)) (shift 3))
+               (->> (euclidian-rhythms/euclidian-pattern
+                     16 8 (nth drum-notes 7)) (shift 5))
+               ))
 
   (reset! melody nil)
   )
